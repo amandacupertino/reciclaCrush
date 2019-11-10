@@ -4,7 +4,6 @@ INCLUDES=-I/home/pi/allegro5/
 
 all: screen
 
-
 screen: screen.o
 	gcc -o screen screen.o $(LIBS)
 
