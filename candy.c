@@ -9,21 +9,23 @@
 
 #define SCREEN_W 480
 #define SCREEN_H 640
-#define FPS 1 //60
+#define SCREEN_H_GAME 480
+#define SCREEN_w_GAME 320
 #define INFO_H 64
+#define FPS 60
 #define MARGIN 5
 
 #define N_COLS 6
 #define N_LINHAS 9
-
 #define N_TYPES 4
+
 #define LATA 1
 #define GARRAFA 2
 #define PAPEL 3
 #define PET 4
 
-const int COL_W = SCREEN_W/N_COLS;
-const int LIN_W = (SCREEN_H - INFO_H)/N_LINHAS;
+const int COL_W = (int)SCREEN_W/N_COLS;
+const int LIN_W = (int)(SCREEN_H-INFO_H)/N_LINHAS;
 
 typedef struct Candy {
 	int type;
