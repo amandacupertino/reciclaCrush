@@ -2,7 +2,7 @@ LIBS=`pkg-config --cflags --libs allegro-5 allegro_acodec-5 allegro_audio-5 alle
 
 INCLUDES=-I/home/pi/allegro5/
 
-all: screen
+all: screen candy
 
 screen: screen.o
 	gcc -o screen screen.o $(LIBS)
@@ -10,8 +10,15 @@ screen: screen.o
 screen.o: screen.c
 	gcc -c screen.c $(LIBS)
 
+candy: candy.o
+	gcc -o candy candy.o $(LIBS)
+
+candy.o: candy.c
+	gcc -c candy.c $(LIBS)
 
 clean:
 	rm -f screen.o
 	rm -f screen
+	rm -f candy.o
+	rm -f candy
 

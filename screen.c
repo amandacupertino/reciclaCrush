@@ -139,7 +139,7 @@ void draw_janela(ALLEGRO_DISPLAY *janela) {
 
 void getCell(int x, int y, int *lin, int *col){
 	*lin = y/CELL_H;
-	*lin = x/CELL_W;
+	*col = x/CELL_W;
 }
 
 void swap(int lin1, int col1, int lin2, int col2){
@@ -206,7 +206,7 @@ int main(int argc, char **argv){
 
 // _________________________________________________________
 
-	colors[0] = al_map_rgb(255,255,255);
+	//colors[0] = al_map_rgb(255,255,255);
 	colors[LATA] = al_map_rgb(255, 0, 250);
 	colors[GARRAFA] = al_map_rgb(250, 250, 0);
 	colors[PAPEL] = al_map_rgb(0,0,255);
