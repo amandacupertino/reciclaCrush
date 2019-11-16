@@ -11,7 +11,7 @@
 #define SCREEN_H 640
 #define FPS 1 //60
 #define INFO_H 64
-#define MARGIN 50
+#define MARGIN 5
 
 #define N_COLS 6
 #define N_LINHAS 9
@@ -23,12 +23,14 @@
 #define PET 4
 
 const int COL_W = SCREEN_W/N_COLS;
-const int LIN_W = SCREEN_H/N_LINHAS;
+const int LIN_W = (SCREEN_H - INFO_H)/N_LINHAS;
 
 typedef struct Candy {
 	int type;
-	ALLEGRO_COLOR cor;
+	int offset_lin;
+	int offset_col;
 	int active;
+	ALLEGRO_COLOR cor;
 
 } Candy;
 
@@ -36,16 +38,16 @@ typedef struct Candy {
 Candy M[N_LINHAS][N_COLS];
 ALLEGRO_COLOR colors[N_TYPES+1];
 
-//int score=0, plays=10;
-//char my_score[100], my_plays[100];
-//ALLEGRO_FONT *size_f; 
+int score=0, plays=10;
+char my_score[100], my_plays[100];
+ALLEGRO_FONT *size_f; 
 
 
 int generateRandomCandy(){
 	return rand()%N_TYPES + 1;
 }
 
-/*void completaMatriz() {
+void completaMatriz() {
 	int i, j;
 	for(i=0; i<N_LINHAS; i++) {
 		for(j=0; j<N_COLS; j++) {
@@ -58,19 +60,39 @@ int generateRandomCandy(){
 			}
 		}
 	}
-}*/
+}
+
+void imprimeMatriz() {
+	printf("\n");
+	int i, j;
+	for(i=0; i<N_LINHAS; i++) {
+		for(j=0; j<N_COLS; j++) {
+			printf("%d (%d,%d) ", M[i][j].type, M[i][j].offset_lin, M[i][j].active);
+		}
+		printf("\n");
+	}
+}
 
 void initCandies(){
 	int i, j;
 	for (i=0; i<N_LINHAS; i++){
 		for(j=0; j<N_COLS; j++){
 			M[i][j].type = generateRandomCandy();
-			M[i][j].cor = colors[M[i][j].type];
+			M[i][j].offset_col = 0;
+			M[i][j].offset_lin = 0;
 			M[i][j].active = 1;
+			M[i][j].cor = colors[M[i][j].type];
 			printf("%d ", M[i][j].type);
 		}
 		printf("\n");
 	}
+}
+
+
+void pausa(ALLEGRO_TIMER *timer) {
+	al_stop_timer(timer);
+	al_rest(3);
+	al_start_timer(timer);
 }
 
 int getXCoord(int col){
@@ -120,7 +142,7 @@ void desenhaCandy(Candy c, int lin, int col){
 
 }*/
 
-/*int newRecord(int score, int *record) {
+int newRecord(int score, int *record) {
 	FILE *arq = fopen("recorde.txt", "r");
 	*record = -1;
 	if(arq != NULL) {
@@ -134,8 +156,29 @@ void desenhaCandy(Candy c, int lin, int col){
 		return 1;
 	}
 	return 0;
-	
-}*/
+}
+
+
+
+void draw_scenario(ALLEGRO_DISPLAY *display) {
+
+	ALLEGRO_COLOR BKG_COLOR = al_map_rgb(0,0,0); 
+	al_set_target_bitmap(al_get_backbuffer(display));
+	al_clear_to_color(BKG_COLOR);
+
+	sprintf(my_score, "score: %d", score);
+	al_draw_text(size_f, al_map_rgb(255, 255, 255), SCREEN_W - 200, INFO_H/4, 0, my_score); 
+	//PLAYS
+	sprintf(my_plays, "jogadas: %d", plays);
+	al_draw_text(size_f, al_map_rgb(255, 255, 255), 10, INFO_H/4, 0, my_plays);
+
+	int i, j;
+	for(i=0; i<N_LINHAS; i++){
+		for(j=0; j<N_COLS; j++){
+			desenhaCandy(M[i][j], i, j);
+		}
+	}   
+}
 
 int clearSequence(int li, int lf, int ci, int cf){
 	int i, j, count=0;
@@ -198,8 +241,7 @@ int processaMatriz(){
 	return count;
 }
 
-
-/*void atualizaOffset() {
+void atualizaOffset() {
 	int i, j, offset;
 
 	for(j=0; j<N_COLS; j++) {
@@ -216,9 +258,9 @@ int processaMatriz(){
 			//}
 		}
 	}
-}*/
+}
 
-/*void atualizaMatriz() {
+void atualizaMatriz() {
 	int i, j, offset;
 
 	for(j=0; j<N_COLS; j++) {
@@ -234,32 +276,16 @@ int processaMatriz(){
 			}
 		}
 	}
-}*/
-
-
-void draw_scenario(ALLEGRO_DISPLAY *display) {
-
-	ALLEGRO_COLOR BKG_COLOR = al_map_rgb(0,0,0); 
-	al_set_target_bitmap(al_get_backbuffer(display));
-	al_clear_to_color(BKG_COLOR);
-
-	/*sprintf(my_score, "score: %d", score);
-	al_draw_text(size_f, al_map_rgb(255, 255, 255), SCREEN_W - 200, INFO_H/4, 0, my_score); 
-	//PLAYS
-	sprintf(my_plays, "jogadas: %d", plays);
-	al_draw_text(size_f, al_map_rgb(255, 255, 255), 10, INFO_H/4, 0, my_plays); */
-
-	int i, j;
-	for(i=0; i<N_LINHAS; i++){
-		for(j=0; j<N_COLS; j++){
-			desenhaCandy(M[i][j], i, j);
-		}
-	}   
 }
+
 
 void getCell(int x, int y, int *lin, int *col){
 	*lin = y/LIN_W;
 	*col = x/COL_W;
+}
+
+int distancia(int lin1, int col1, int lin2, int col2){
+	return sqrt(pow(lin1-lin2, 2) + pow(col1-col2, 2));
 }
 
 void swap(int lin1, int col1, int lin2, int col2){
@@ -267,6 +293,7 @@ void swap(int lin1, int col1, int lin2, int col2){
 	aux = M[lin1][col1];
 	M[lin1][col1] = M[lin2][col2];
 	M[lin2][col2] = aux;
+	plays--;
 }
 
 
@@ -302,7 +329,15 @@ int main(int argc, char **argv){
 	}
 
 	if(!al_install_mouse())
-		fprintf(stderr, "failed to initialize mouse!\n");   
+		fprintf(stderr, "failed to initialize mouse!\n");
+
+	//inicializa o modulo allegro que carrega as fontes
+	al_init_font_addon();
+	//inicializa o modulo allegro que entende arquivos tff de fontes
+	al_init_ttf_addon();
+
+	//carrega o arquivo arial.ttf da fonte Arial e define que sera usado o tamanho 32 (segundo parametro)
+	size_f = al_load_font("arial.ttf", 32, 1);   
 
 
 	event_queue = al_create_event_queue();
@@ -321,6 +356,8 @@ int main(int argc, char **argv){
 	al_register_event_source(event_queue, al_get_keyboard_event_source());   
 	//registra mouse na fila de eventos:
 	al_register_event_source(event_queue, al_get_mouse_event_source());
+		//inicia o temporizador
+	al_start_timer(timer);
 
 	// _________________________________________________________
 
@@ -333,26 +370,30 @@ int main(int argc, char **argv){
 // _________________________________________________________    
    
 	// Inicializa a matriz de doces
+	//srand(2);
 	initCandies();
 	int n_zeros = processaMatriz();
-	/*while(n_zeros > 0){
-		do{
+	while(n_zeros > 0) {
+		do {
 			atualizaOffset();
+			//imprimeMatriz();
 			atualizaMatriz();
-		}while(processaMatriz());
+			//imprimeMatriz();			
+		} while(processaMatriz());
 		completaMatriz();
+		//imprimeMatriz();
 		n_zeros = processaMatriz();
-	}*/
+		//imprimeMatriz();
+		//system("PAUSE");
+	} 
 
-	//inicia o temporizador
-	al_start_timer(timer);
+
 
 	draw_scenario(display);
 	al_flip_display();	
 
 	int playing = 1;
-	
-	int score, pontos, lin_src, col_src, lin_dst, col_dst;
+	int pontos, lin_src, col_src, lin_dst, col_dst, flag_animation=0;
 
 	//enquanto playing for verdadeiro, faca:
 	while(playing) {
@@ -367,13 +408,16 @@ int main(int argc, char **argv){
 
 		}
 		else if(ev.type == ALLEGRO_EVENT_MOUSE_BUTTON_DOWN) {
-			printf("\nclicou em (%d, %d)", ev.mouse.x, ev.mouse.y);
+			//printf("\nclicou em (%d, %d)", ev.mouse.x, ev.mouse.y);
 			getCell(ev.mouse.x, ev.mouse.y, &lin_src, &col_src);
 		}
 		else if(ev.type == ALLEGRO_EVENT_MOUSE_BUTTON_UP) {
-			printf("\nsoltou em (%d, %d)", ev.mouse.x, ev.mouse.y);
+			//printf("\nsoltou em (%d, %d)", ev.mouse.x, ev.mouse.y);
 			getCell(ev.mouse.x, ev.mouse.y, &lin_dst, &col_dst);
-			swap(lin_src, col_src, lin_dst, col_dst);	
+			if(distancia(lin_src, col_src, lin_dst, col_dst)== 1 && M[lin_src][col_src].type && M[lin_dst][col_dst].type){
+			swap(lin_src, col_src, lin_dst, col_dst);
+			flag_animation = 1;
+			}
 		}		
 	    //se o tipo de evento for um evento do temporizador, ou seja, se o tempo passou de t para t+1
 		else if(ev.type == ALLEGRO_EVENT_TIMER) {
@@ -381,19 +425,29 @@ int main(int argc, char **argv){
 			while(pontos > 0){
 				draw_scenario(display);
 				al_flip_display();
-				//pausa(timer);
-				//atualizaOffset();
-				//atualizaMatriz();
+				//imprimeMatriz();
+				pausa(timer);
+				atualizaOffset();
+				//imprimeMatriz();
+				atualizaMatriz();
+				//imprimeMatriz();
 				score+=pow(2,pontos);
 				pontos = processaMatriz();
-				printf("\n Pontos: %d\n", pontos);
+				//printf("\n Pontos: %d\n", pontos);
 			}
 
-
-		    
+    
 		    draw_scenario(display);
-			al_flip_display();		
-		}
+			al_flip_display();
+
+
+			if(plays == 0)
+				playing = 0;
+			flag_animation = 0;
+			//printf("\nflag_animation: %d", flag_animation);
+
+		}		
+
 	    //se o tipo de evento for o fechamento da tela (clique no x da janela)
 		else if(ev.type == ALLEGRO_EVENT_DISPLAY_CLOSE) {
 			playing = 0;
@@ -402,6 +456,22 @@ int main(int argc, char **argv){
 	} 
 
 	al_rest(1);
+
+	int record;
+	//colore toda a tela de preto
+	al_clear_to_color(al_map_rgb(230,240,250));
+	sprintf(my_score, "Score: %d", score);
+	al_draw_text(size_f, al_map_rgb(200, 0, 30), SCREEN_W/3, SCREEN_H/2, 0, my_score);
+	if(newRecord(score, &record)) {
+		al_draw_text(size_f, al_map_rgb(200, 20, 30), SCREEN_W/3, 100+SCREEN_H/2, 0, "NEW RECORD!");
+	}
+	else {
+		sprintf(my_score, "Record: %d", record);
+		al_draw_text(size_f, al_map_rgb(0, 200, 30), SCREEN_W/3, 100+SCREEN_H/2, 0, my_score);
+	}
+
+	al_flip_display();	
+	al_rest(2);	
 
 	al_destroy_timer(timer);
 	al_destroy_display(display);
