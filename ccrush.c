@@ -3,50 +3,131 @@
 #include <allegro5/allegro_font.h>
 #include <allegro5/allegro_ttf.h>
 #include <allegro5/allegro_primitives.h>
+#include <allegro5/allegro_image.h>
 #include <stdlib.h>
 #include <math.h>
 
 
-#define SCREEN_W 480
-#define SCREEN_H 640
-#define SCREEN_H_GAME 480
-#define SCREEN_w_GAME 320
-#define INFO_H 64
-#define FPS 60
-#define MARGIN 5
-
-#define N_COLS 6
 #define N_LINHAS 9
-#define N_TYPES 4
+#define N_COLS 6
 
+#define NUM_TYPES 4
 #define LATA 1
 #define GARRAFA 2
 #define PAPEL 3
 #define PET 4
 
-const int COL_W = (int)SCREEN_W/N_COLS;
-const int LIN_W = (int)(SCREEN_H-INFO_H)/N_LINHAS;
+#define LARGURA_TELA 480
+#define ALTURA_TELA 640
+#define LARGURA_JOGO 320
+#define ALTURA_JOGO 480
+#define LARGURA_COL 64
+#define LARGURA_LIN 60
+#define FPS 1
+#define INFO_H 64
+#define MARGIN 6
 
-typedef struct Candy {
+typedef struct Lixo {
 	int type;
 	int offset_lin;
 	int offset_col;
 	int active;
-	ALLEGRO_COLOR cor;
+	ALLEGRO_BITMAP desenho;
+} Lixo;
 
-} Candy;
+Lixo M[N_LINHAS][N_COLS];
+ALLEGRO_BITMAP desenhos[NUM_TYPES+1];
 
-
-Candy M[N_LINHAS][N_COLS];
-ALLEGRO_COLOR colors[N_TYPES+1];
+const int COL_W = (int)LARGURA_TELA/N_COLS;
+const int LIN_H = (int)(ALTURA_TELA-INFO_H)/N_LINHAS;
 
 int score=0, plays=10;
 char my_score[100], my_plays[100];
-ALLEGRO_FONT *size_f; 
+
+ALLEGRO_FONT *size_f;   
 
 
-int generateRandomCandy(){
-	return rand()%N_TYPES + 1;
+
+int Random() {
+	return rand()%NUM_TYPES + 1;
+}
+
+
+void pausa(ALLEGRO_TIMER *timer) {
+	al_stop_timer(timer);
+	al_rest(3);
+	al_start_timer(timer);
+}
+
+void completaMatriz() {
+	int i, j;
+	for(i=0; i<N_LINHAS; i++) {
+		for(j=0; j<N_COLS; j++) {
+			if(M[i][j].type == 0) {
+				M[i][j].type = Random();
+				M[i][j].offset_col = 0;
+				M[i][j].offset_lin = 0;
+				M[i][j].active = 1;		
+				M[i][j].desenho = desenhos[M[i][j].type];	
+			}
+		}
+	}
+}
+
+void iniciarJogo() {
+	int i, j;
+	for(i=0; i<N_LINHAS; i++) {
+		for(j=0; j<N_COLS; j++) {
+			M[i][j].type = Random();
+			M[i][j].offset_col = 0;
+			M[i][j].offset_lin = 0;
+			M[i][j].active = 1;
+			M[i][j].desenho = desenhos[M[i][j].type];
+			printf("%d ", M[i][j].type);
+		}
+		printf("\n");
+	}
+}
+
+
+int getXCoord(int col){
+	return col * LARGURA_COL + 80;
+}
+int getYCoord(int lin){
+	return lin * LARGURA_LIN + 80;
+}
+
+
+void draw_candy(int lin, int col) {
+
+	int cell_x = getXCoord(col);
+	int cell_y = getYCoord(lin);
+
+
+	if(M[lin][col].type == LATA) {
+		al_draw_filled_triangle(cell_x+MARGIN, cell_y + LIN_H - MARGIN,
+		                        cell_x + COL_W - MARGIN, cell_y + LIN_H - MARGIN,
+		                        cell_x + COL_W/2, cell_y+MARGIN,
+		                        M[lin][col].desenho);
+	} 
+	else if(M[lin][col].type == GARRAFA) {
+		al_draw_filled_rectangle(cell_x+2*MARGIN, cell_y+2*MARGIN,
+		                         cell_x-2*MARGIN+COL_W, cell_y-2*MARGIN+LIN_H,
+		                         M[lin][col].desenho);
+
+	} 
+	else if(M[lin][col].type == PAPEL) {
+		al_draw_filled_rounded_rectangle(cell_x+MARGIN, cell_y+MARGIN,
+		                                 cell_x-MARGIN+COL_W, cell_y-MARGIN+LIN_H,
+		                                 COL_W/3, LIN_H/3, M[lin][col].desenho);
+
+	} 	
+	else if(M[lin][col].type == PET) {
+		al_draw_filled_ellipse(cell_x+COL_W/2, cell_y+LIN_H/2,
+		                       COL_W/2-MARGIN, LIN_H/2-MARGIN,
+		                       M[lin][col].desenho);
+	}
+
 }
 
 
@@ -64,185 +145,109 @@ int newRecord(int score, int *record) {
 		return 1;
 	}
 	return 0;
+	
 }
-
-/*void completaMatriz() {
-	int i, j;
-	for(i=0; i<N_LINHAS; i++) {
-		for(j=0; j<N_COLS; j++) {
-			if(M[i][j].type == 0) {
-				M[i][j].type = generateRandomCandy();
-				M[i][j].offset_col = 0;
-				M[i][j].offset_lin = 0;
-				M[i][j].active = 1;		
-				M[i][j].cor = colors[M[i][j].type];	
-			}
-		}
-	}
-}*/
-
-
-void initCandies(){
-	int i, j;
-	for (i=0; i<N_LINHAS; i++){
-		for(j=0; j<N_COLS; j++){
-			M[i][j].type = generateRandomCandy();
-			M[i][j].offset_col = 0;
-			M[i][j].offset_lin = 0;
-			M[i][j].active = 1;
-			M[i][j].cor = colors[M[i][j].type];
-			printf("%d ", M[i][j].type);
-		}
-		printf("\n");
-	}
-}
-
-
-void pausa(ALLEGRO_TIMER *timer) {
-	al_stop_timer(timer);
-	al_rest(3);
-	al_start_timer(timer);
-}
-
-int getXCoord(int col){
-	return col * COL_W;
-}
-
-int getYCoord(int linha){
-	return linha * LIN_W;
-}
-
-/*int getXCoord(int col){
-	return col * LARGURA_COL + 80;
-}
-int getYCoord(int lin){
-	return lin * LARGURA_LIN + 80;
-}*/
-
-
-void desenhaCandy(Candy c, int lin, int col){
-	int x0 = getXCoord(col);
-	int y0 = getYCoord(lin);
-
-	if (c.type == LATA){
-		al_draw_filled_rectangle(x0, y0, x0+COL_W, y0+LIN_W, c.cor);
-	}
-	else if(c.type == GARRAFA){
-		al_draw_filled_rounded_rectangle(x0, y0, x0+COL_W, y0+LIN_W, COL_W/3, LIN_W/3, c.cor);
-	}
-	else if (c.type == PAPEL){
-		al_draw_filled_triangle(x0, y0+LIN_W, x0+COL_W, y0+LIN_W, x0+COL_W/2, y0, c.cor);
-	}
-	else if (c.type == PET){
-		al_draw_filled_ellipse(x0+COL_W/2, y0+LIN_W/2, COL_W/2, LIN_W/2, c.cor);
-	}
-}
-
-/*void substituiTipo (int M[i][j], int m, int n. int sequencia){
-//	for (i=0; i<sequencia; i++);
-//		for(j=0; j=sequencia; j++){
-//			matriz[m-i][n] = 0;
-//		}
-//}
-
-//int identificaSeq(){
-//	int i, j;
-//	int doce1, doce2, doce3
-
-	for(i = 0, i<N_LINHAS, i++){
-		for(j=0; j<N_COLS, j++){
-			if(M[i][j] == m[i][j+1] == m[i][j+2]){
-				c.type = 0;
-			}
-		}
-	}
-
-}*/
-
-
 
 
 void draw_scenario(ALLEGRO_DISPLAY *display) {
 
+	
+	ALLEGRO_BITMAP *image61 = NULL;
+	image61 = al_load_bitmap("Sel_061.png");
+	al_draw_bitmap(image61, 0, 0, 0);
+	al_set_target_bitmap(al_get_backbuffer(display)); 
+	
+	//SCORE
+	sprintf(my_score, "score: %d", score);
+	al_draw_text(size_f, al_map_rgb(255, 255, 255), LARGURA_TELA - 200, INFO_H/4, 0, my_score); 
+	//PLAYS
+	sprintf(my_plays, "jogadas: %d", plays);
+	al_draw_text(size_f, al_map_rgb(255, 255, 255), 10, INFO_H/4, 0, my_plays);   
 
+	int i, j;
+	for(i=0; i<N_LINHAS; i++) {
+		for(j=0; j<N_COLS; j++) {
+			draw_candy(i, j);
+		}
+	}       
+
+}
+
+
+/*void criaFundo(ALLEGRO_DISPLAY *display){
+
+	//BITMAP *image61 = create_bitmap(640, 480);
 	ALLEGRO_BITMAP *image61 = NULL;
 	image61 = al_load_bitmap("Sel_061.png");
 	al_draw_bitmap(image61, 100, 100, 0);
 	al_set_target_bitmap(al_get_backbuffer(display));
 
-	sprintf(my_score, "score: %d", score);
-	al_draw_text(size_f, al_map_rgb(255, 255, 255), SCREEN_W - 200, INFO_H/4, 0, my_score); 
-	//PLAYS
-	sprintf(my_plays, "jogadas: %d", plays);
-	al_draw_text(size_f, al_map_rgb(255, 255, 255), 10, INFO_H/4, 0, my_plays);
+}*/
 
-	int i, j;
-	for(i=0; i<N_LINHAS; i++){
-		for(j=0; j<N_COLS; j++){
-			desenhaCandy(M[i][j], i, j);
-		}
-	}   
-}
-
-int clearSequence(int li, int lf, int ci, int cf){
+int clearSequence(int li, int lf, int ci, int cf) {
 	int i, j, count=0;
-	for(i=li; i<lf; i++){
-		for(j=ci; j<cf; j++){
-			count ++;
+	for(i=li; i<=lf; i++) {
+		for(j=ci; j<=cf; j++) {
+			count++;
 			M[i][j].active = 0;
-			M[i][j].cor = colors[0];
+			M[i][j].desenho = desenhos[0];
 		}
-
 	}
-
 	return count;
 }
 
-int processaMatriz(){
-
+int processaMatriz() {
+	//retorna a quantidade de pontos feitos
 	int i, j, k, count = 0;
 	int current, seq, ultimo;
 
-	for(i=0; i<N_LINHAS; i++){
+	//procura na horizontal:
+	for(i=0; i<N_LINHAS; i++) {
 		current = M[i][0].type;
 		seq = 1;
-		for(j=1; j<N_COLS; j++){
-			if(current == M[i][j].type && current > 0){
-				seq ++;
-				if (j == N_COLS-1 && seq >=3){
+		for(j=1; j<N_COLS; j++) {
+			if(current == M[i][j].type && current > 0) {
+				seq++;
+				if(j == N_COLS-1 && seq >=3)
 					count += clearSequence(i, i, j-seq+1, N_COLS-1);
-				}
 			}
-			else{
-				if(seq >=3){
+			else {
+				if(seq >= 3) {
 					count += clearSequence(i, i, j-seq, j-1);
 				}
 				seq = 1;
-				current = M[i][j].type;
+				current = M[i][j].type;					
 			}
 		}
 	}
 
-	for (j=0; j<N_COLS; j++){
+
+	//procura na vertical:
+	for(j=0; j<N_COLS; j++) {
 		current = M[0][j].type;
 		seq = 1;
-		for(i=1; i<N_LINHAS; i++){
-			if(current == M[i][j].type && current > 0){
+		for(i=1; i<N_LINHAS; i++) {
+			if(current == M[i][j].type && current > 0) {
 				seq++;
-				if(i==N_LINHAS-1 && seq >=3){
+				if(i == N_LINHAS-1 && seq >=3) 
 					count += clearSequence(i-seq+1, N_LINHAS-1, j, j);
-				}
 			}
 			else {
-				if(seq >= 3){
+				if(seq >= 3) {
 					count += clearSequence(i-seq, i-1, j, j);
 				}
+
 				seq = 1;
-				current = M[i][j].type;
+				current = M[i][j].type;	
+
 			}
 		}
 	}
+
+
 	return count;
+
+
 }
 
 void atualizaOffset() {
@@ -269,7 +274,7 @@ void atualizaMatriz() {
 			if(offset > 0) {
 				M[i+offset][j].type = M[i][j].type;
 				M[i+offset][j].active = M[i][j].active;
-				M[i+offset][j].cor = M[i][j].cor;
+				M[i+offset][j].desenho = M[i][j].desenho;
 				M[i][j].type = 0;
 				M[i][j].active = 0;
 				M[i][j].offset_lin = 0;
@@ -280,16 +285,19 @@ void atualizaMatriz() {
 
 
 void getCell(int x, int y, int *lin, int *col){
-	*lin = y/LIN_W;
-	*col = x/COL_W;
+	x -= 80;
+	y -= 80;
+	*lin = y / LARGURA_LIN;
+	*col = x / LARGURA_COL;
 }
 
-int distancia(int lin1, int col1, int lin2, int col2){
+int distancia(int lin1, int col1, int lin2, int col2) {
 	return sqrt(pow(lin1-lin2, 2) + pow(col1-col2, 2));
 }
 
+
 void swap(int lin1, int col1, int lin2, int col2){
-	Candy aux;
+	Lixo aux;
 	aux = M[lin1][col1];
 	M[lin1][col1] = M[lin2][col2];
 	M[lin2][col2] = aux;
@@ -297,12 +305,14 @@ void swap(int lin1, int col1, int lin2, int col2){
 }
 
 
+
+
 int main(int argc, char **argv){
 
 	ALLEGRO_DISPLAY *display = NULL;
 	ALLEGRO_EVENT_QUEUE *event_queue = NULL;
 	ALLEGRO_TIMER *timer = NULL;
-	
+	ALLEGRO_BITMAP *image61 = NULL;
 
 
 	//----------------------- rotinas de inicializacao ---------------------------------------
@@ -322,7 +332,7 @@ int main(int argc, char **argv){
 		return -1;
 	}
 
-	display = al_create_display(SCREEN_W, SCREEN_H);
+	display = al_create_display(LARGURA_TELA, ALTURA_TELA);
 	if(!display) {
 		fprintf(stderr, "failed to create display!\n");
 		al_destroy_timer(timer);
@@ -330,10 +340,8 @@ int main(int argc, char **argv){
 	}
 
 	if(!al_install_mouse())
-		fprintf(stderr, "failed to initialize mouse!\n");
+		fprintf(stderr, "failed to initialize mouse!\n");   
 
-	
-	al_init_image_addon();	
 
 	//inicializa o modulo allegro que carrega as fontes
 	al_init_font_addon();
@@ -341,8 +349,7 @@ int main(int argc, char **argv){
 	al_init_ttf_addon();
 
 	//carrega o arquivo arial.ttf da fonte Arial e define que sera usado o tamanho 32 (segundo parametro)
-	size_f = al_load_font("arial.ttf", 32, 1);   
-
+	size_f = al_load_font("arial.ttf", 32, 1);   	
 
 	event_queue = al_create_event_queue();
 	if(!event_queue) {
@@ -359,41 +366,37 @@ int main(int argc, char **argv){
 	//registra o teclado na fila de eventos:
 	al_register_event_source(event_queue, al_get_keyboard_event_source());   
 	//registra mouse na fila de eventos:
-	al_register_event_source(event_queue, al_get_mouse_event_source());
-		//inicia o temporizador
+	al_register_event_source(event_queue, al_get_mouse_event_source());    
+   //inicia o temporizador
 	al_start_timer(timer);
 
-	// _________________________________________________________
+	al_init_image_addon();
 
-	colors[0] = al_map_rgb(255,255,255);
-	colors[LATA] = al_map_rgb(255, 0, 250);
-	colors[GARRAFA] = al_map_rgb(250, 250, 0);
-	colors[PAPEL] = al_map_rgb(0,0,255);
-	colors[PET] = al_map_rgb(0,255,0);
+	desenhos[0] = al_draw_bitmap( );
+	desenhos[LATA] = al_draw_bitmap( );
+	desenhos[GARRAFA] = al_draw_bitmap( );
+	desenhos[PAPEL] = al_draw_bitmap( );
+	desenhos[PET] = al_draw_bitmap( );
 
-// _________________________________________________________    
-   
-	// Inicializa a matriz de doces
-	//srand(2);
-	initCandies();
+	//----------------------- fim das rotinas de inicializacao ---------------------------------------
+
+	srand(2);
+	//criaFundo(); 
+	iniciarJogo();
 	int n_zeros = processaMatriz();
 	while(n_zeros > 0) {
 		do {
 			atualizaOffset();
 			atualizaMatriz();
 		} while(processaMatriz());
-		//completaMatriz();
+		completaMatriz();
 		n_zeros = processaMatriz();
 	} 
-
-
 
 	draw_scenario(display);
 	al_flip_display();	
 
-	int playing = 1;
-	int pontos, lin_src, col_src, lin_dst, col_dst, flag_animation=0;
-
+	int pontos, playing = 1, col_src, lin_src, col_dst, lin_dst, flag_animation=0;
 	//enquanto playing for verdadeiro, faca:
 	while(playing) {
 		ALLEGRO_EVENT ev;
@@ -406,47 +409,40 @@ int main(int argc, char **argv){
 			}
 
 		}
-		else if(ev.type == ALLEGRO_EVENT_MOUSE_BUTTON_DOWN) {
-			//printf("\nclicou em (%d, %d)", ev.mouse.x, ev.mouse.y);
+		else if(ev.type == ALLEGRO_EVENT_MOUSE_BUTTON_DOWN && !flag_animation) {
 			getCell(ev.mouse.x, ev.mouse.y, &lin_src, &col_src);
 		}
-		else if(ev.type == ALLEGRO_EVENT_MOUSE_BUTTON_UP) {
-			//printf("\nsoltou em (%d, %d)", ev.mouse.x, ev.mouse.y);
+		else if(ev.type == ALLEGRO_EVENT_MOUSE_BUTTON_UP && !flag_animation) {
 			getCell(ev.mouse.x, ev.mouse.y, &lin_dst, &col_dst);
-			if(distancia(lin_src, col_src, lin_dst, col_dst)== 1 && M[lin_src][col_src].type && M[lin_dst][col_dst].type){
-			swap(lin_src, col_src, lin_dst, col_dst);
-			flag_animation = 1;
+			if(distancia(lin_src, col_src, lin_dst, col_dst) == 1
+				&& M[lin_src][col_src].type && M[lin_dst][col_dst].type) {
+				swap(lin_src, col_src, lin_dst, col_dst);
+				flag_animation = 1; //nao permite que o usuario faca outro comando enquanto a animacao ocorre
 			}
+
 		}		
 	    //se o tipo de evento for um evento do temporizador, ou seja, se o tempo passou de t para t+1
 		else if(ev.type == ALLEGRO_EVENT_TIMER) {
 			pontos = processaMatriz();
-			while(pontos > 0){
-				draw_scenario(display);
+			
+			while(pontos > 0) {
+			    draw_scenario(display);
 				al_flip_display();
-				//imprimeMatriz();
-				pausa(timer);
+				pausa(timer);					
 				atualizaOffset();
-				//imprimeMatriz();
 				atualizaMatriz();
-				//imprimeMatriz();
 				score+=pow(2,pontos);
 				pontos = processaMatriz();
-				//printf("\n Pontos: %d\n", pontos);
 			}
 
-    
+		    //reinicializo a tela
 		    draw_scenario(display);
-			al_flip_display();
-
+			al_flip_display();		
 
 			if(plays == 0)
 				playing = 0;
 			flag_animation = 0;
-			//printf("\nflag_animation: %d", flag_animation);
-
-		}		
-
+		}
 	    //se o tipo de evento for o fechamento da tela (clique no x da janela)
 		else if(ev.type == ALLEGRO_EVENT_DISPLAY_CLOSE) {
 			playing = 0;
@@ -460,20 +456,22 @@ int main(int argc, char **argv){
 	//colore toda a tela de preto
 	al_clear_to_color(al_map_rgb(230,240,250));
 	sprintf(my_score, "Score: %d", score);
-	al_draw_text(size_f, al_map_rgb(200, 0, 30), SCREEN_W/3, SCREEN_H/2, 0, my_score);
+	al_draw_text(size_f, al_map_rgb(200, 0, 30), LARGURA_TELA/3, ALTURA_TELA/2, 0, my_score);
 	if(newRecord(score, &record)) {
-		al_draw_text(size_f, al_map_rgb(200, 20, 30), SCREEN_W/3, 100+SCREEN_H/2, 0, "NEW RECORD!");
+		al_draw_text(size_f, al_map_rgb(200, 20, 30), LARGURA_TELA/3, 100+ALTURA_TELA/2, 0, "NEW RECORD!");
 	}
 	else {
 		sprintf(my_score, "Record: %d", record);
-		al_draw_text(size_f, al_map_rgb(0, 200, 30), SCREEN_W/3, 100+SCREEN_H/2, 0, my_score);
+		al_draw_text(size_f, al_map_rgb(0, 200, 30), LARGURA_TELA/3, 100+ALTURA_TELA/2, 0, my_score);
 	}
-
+	//reinicializa a tela
 	al_flip_display();	
 	al_rest(2);	
 
+
 	al_destroy_timer(timer);
 	al_destroy_display(display);
+	al_destroy_bitmap(image61);
 	al_destroy_event_queue(event_queue);
 
 	return 0;
