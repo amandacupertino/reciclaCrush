@@ -4,6 +4,9 @@
 #include <allegro5/allegro_ttf.h>
 #include <allegro5/allegro_primitives.h>
 #include <allegro5/allegro_image.h>
+#include <allegro5/allegro_native_dialog.h>
+#include <allegro5/allegro_audio.h>
+#include <allegro5/allegro_acodec.h>
 #include <stdlib.h>
 #include <math.h>
 
@@ -174,16 +177,6 @@ void draw_scenario(ALLEGRO_DISPLAY *display) {
 }
 
 
-/*void criaFundo(ALLEGRO_DISPLAY *display){
-
-	//BITMAP *image61 = create_bitmap(640, 480);
-	ALLEGRO_BITMAP *image61 = NULL;
-	image61 = al_load_bitmap("Sel_061.png");
-	al_draw_bitmap(image61, 100, 100, 0);
-	al_set_target_bitmap(al_get_backbuffer(display));
-
-}*/
-
 int clearSequence(int li, int lf, int ci, int cf) {
 	int i, j, count=0;
 	for(i=li; i<=lf; i++) {
@@ -312,14 +305,81 @@ int main(int argc, char **argv){
 	ALLEGRO_DISPLAY *display = NULL;
 	ALLEGRO_EVENT_QUEUE *event_queue = NULL;
 	ALLEGRO_TIMER *timer = NULL;
+	//samples que guardam os efeitos sonoros
+	ALLEGRO_SAMPLE *som_swap=NULL;
+	ALLEGRO_SAMPLE *som_preenche=NULL;
+	ALLEGRO_SAMPLE *som_telatroca=NULL;
+	//musica de fundo
+	ALLEGRO_AUDIO_STREAM *musica = NULL;
+	//plano de fundo
 	ALLEGRO_BITMAP *image61 = NULL;
-
+	//imagem das peças
+	ALLEGRO_BITMAP *Lata = NULL;
+	ALLEGRO_BITMAP *pet = NULL;
+	ALLEGRO_BITMAP *garrafa = NULL;
+	ALLEGRO_BITMAP *papel = NULL;
+	ALLEGRO_BITMAP *vazio = NULL;
 
 	//----------------------- rotinas de inicializacao ---------------------------------------
+	
 	if(!al_init()) {
 		fprintf(stderr, "failed to initialize allegro!\n");
 		return -1;
 	}
+
+	//----------------------- rotinas de audio -----------------------------------------------
+	
+	if(!al_install_audio()){
+        error_msg("Falha ao inicializar o audio");
+        return 0;
+    }
+
+    if(!al_init_acodec_addon()){
+        error_msg("Falha ao inicializar o codec de audio");
+        return 0;
+    }
+
+    if (!al_reserve_samples(5)){
+        error_msg("Falha ao reservar amostrar de audio");
+        return 0;
+    }
+
+    //carrega os samples
+    som_swap = al_load_sample("swap.mp3");
+    if (!som_swap){
+        error_msg( "Audio nao carregado" );
+        return 0;
+    }
+    som_preenche = al_load_sample("complete.mp3");
+    if (!som_preenche){
+        error_msg( "Audio nao carregado" );
+        al_destroy_sample(som_preenche);
+        return 0;
+    }
+
+    /*som_telatroca = al_load_sample("nome_arquivo.extensão");
+    if (!som_telatroca){
+        error_msg("Audio nao carregado");
+        al_destroy_sample(som_telatroca);
+        return 0;
+    }*/
+ 
+    //carrega o stream
+    musica = al_load_audio_stream("musicatabuleiro.mp3", 4, 1024);
+    if (!musica)
+    {
+        error_msg( "Audio nao carregado" );
+        al_destroy_sample(som_swap);
+        al_destroy_sample(som_preenche);
+        return 0;
+    }
+    //liga o stream no mixer
+    al_attach_audio_stream_to_mixer(musica, al_get_default_mixer());
+    //define que o stream vai tocar no modo repeat
+    al_set_audio_stream_playmode(musica, ALLEGRO_PLAYMODE_LOOP)
+
+
+	//-------------------------------------------------------------------------------------
 
 	if(!al_init_primitives_addon()){
 		fprintf(stderr, "failed to initialize primitives!\n");
@@ -336,6 +396,9 @@ int main(int argc, char **argv){
 	if(!display) {
 		fprintf(stderr, "failed to create display!\n");
 		al_destroy_timer(timer);
+		al_destroy_sample(som_swap);
+        al_destroy_sample(som_preenche);
+		al_destroy_audio_stream(musica);
 		return -1;
 	}
 
@@ -372,16 +435,21 @@ int main(int argc, char **argv){
 
 	al_init_image_addon();
 
-	desenhos[0] = al_draw_bitmap( );
-	desenhos[LATA] = al_draw_bitmap( );
-	desenhos[GARRAFA] = al_draw_bitmap( );
-	desenhos[PAPEL] = al_draw_bitmap( );
-	desenhos[PET] = al_draw_bitmap( );
+	Lata = al_load_bitmap("Lata.png");
+	Pet = al_load_bitmap("pet.png");
+	Garrafa = al_load_bitmap("garrafa.png");
+	Papel = al_load_bitmap("papel.png");
+	Vazio = al_load_bitmap("vazio.png");
+
+	desenhos[0] = al_draw_bitmap(vazio, 0, 0, 0);
+	desenhos[LATA] = al_draw_bitmap(Lata, 0, 0, 0);
+	desenhos[GARRAFA] = al_draw_bitmap(Garrafa, 0, 0, 0);
+	desenhos[PAPEL] = al_draw_bitmap(Papel, 0, 0, 0);
+	desenhos[PET] = al_draw_bitmap(Pet, 0, 0, 0);
 
 	//----------------------- fim das rotinas de inicializacao ---------------------------------------
 
 	srand(2);
-	//criaFundo(); 
 	iniciarJogo();
 	int n_zeros = processaMatriz();
 	while(n_zeros > 0) {
@@ -417,6 +485,7 @@ int main(int argc, char **argv){
 			if(distancia(lin_src, col_src, lin_dst, col_dst) == 1
 				&& M[lin_src][col_src].type && M[lin_dst][col_dst].type) {
 				swap(lin_src, col_src, lin_dst, col_dst);
+				al_play_sample(som_swap, 1.0, 0.0,1.0,ALLEGRO_PLAYMODE_ONCE,NULL);
 				flag_animation = 1; //nao permite que o usuario faca outro comando enquanto a animacao ocorre
 			}
 
@@ -472,6 +541,9 @@ int main(int argc, char **argv){
 	al_destroy_timer(timer);
 	al_destroy_display(display);
 	al_destroy_bitmap(image61);
+	l_destroy_sample(som_swap);
+    al_destroy_sample(som_preenche);
+    al_destroy_audio_stream(musica)
 	al_destroy_event_queue(event_queue);
 
 	return 0;
