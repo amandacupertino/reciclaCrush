@@ -30,16 +30,18 @@
 #define INFO_H 64
 #define MARGIN 6
 
+
+
 typedef struct Lixo {
 	int type;
 	int offset_lin;
 	int offset_col;
 	int active;
-	ALLEGRO_BITMAP desenho;
+	//ALLEGRO_BITMAP *desenho[NUM_TYPES+1];
 } Lixo;
 
 Lixo M[N_LINHAS][N_COLS];
-ALLEGRO_BITMAP desenhos[NUM_TYPES+1];
+
 
 const int COL_W = (int)LARGURA_TELA/N_COLS;
 const int LIN_H = (int)(ALTURA_TELA-INFO_H)/N_LINHAS;
@@ -71,7 +73,7 @@ void completaMatriz() {
 				M[i][j].offset_col = 0;
 				M[i][j].offset_lin = 0;
 				M[i][j].active = 1;		
-				M[i][j].desenho = desenhos[M[i][j].type];	
+				//M[i][j].desenho = desenho[M[i][j].type];	
 			}
 		}
 	}
@@ -85,7 +87,7 @@ void iniciarJogo() {
 			M[i][j].offset_col = 0;
 			M[i][j].offset_lin = 0;
 			M[i][j].active = 1;
-			M[i][j].desenho = desenhos[M[i][j].type];
+			//M[i][j].desenho = desenho[M[i][j].type];
 			printf("%d ", M[i][j].type);
 		}
 		printf("\n");
@@ -103,33 +105,49 @@ int getYCoord(int lin){
 
 void draw_candy(int lin, int col) {
 
-	int cell_x = getXCoord(col);
-	int cell_y = getYCoord(lin);
+	int x0 = getXCoord(col);
+	int y0 = getYCoord(lin);
+
+	//al_init_image_addon();
 
 
+	ALLEGRO_BITMAP *lata = NULL;
+	ALLEGRO_BITMAP *garrafa = NULL;
+	ALLEGRO_BITMAP *papel = NULL;
+	ALLEGRO_BITMAP *pet = NULL;
+	//ALLEGRO_BITMAP *vazio = NULL;
+
+	lata = al_load_bitmap("bitmap//lata.png");
+	garrafa = al_load_bitmap("bitmap//garrafa.png");
+	papel = al_load_bitmap("bitmap//papel.png");
+	pet = al_load_bitmap("bitmap//pet.png");
+	//vazio = al_load_bitmap("bitmap\\vazio.png");
+
+	
 	if(M[lin][col].type == LATA) {
-		al_draw_filled_triangle(cell_x+MARGIN, cell_y + LIN_H - MARGIN,
-		                        cell_x + COL_W - MARGIN, cell_y + LIN_H - MARGIN,
-		                        cell_x + COL_W/2, cell_y+MARGIN,
-		                        M[lin][col].desenho);
-	} 
+		al_draw_bitmap(lata, x0, y0, 0);
+		}
+
 	else if(M[lin][col].type == GARRAFA) {
-		al_draw_filled_rectangle(cell_x+2*MARGIN, cell_y+2*MARGIN,
-		                         cell_x-2*MARGIN+COL_W, cell_y-2*MARGIN+LIN_H,
-		                         M[lin][col].desenho);
+		al_draw_bitmap(garrafa, x0, y0, 0);
+		}
 
-	} 
 	else if(M[lin][col].type == PAPEL) {
-		al_draw_filled_rounded_rectangle(cell_x+MARGIN, cell_y+MARGIN,
-		                                 cell_x-MARGIN+COL_W, cell_y-MARGIN+LIN_H,
-		                                 COL_W/3, LIN_H/3, M[lin][col].desenho);
-
-	} 	
+		al_draw_bitmap(papel, x0, y0, 0);
+		}
 	else if(M[lin][col].type == PET) {
-		al_draw_filled_ellipse(cell_x+COL_W/2, cell_y+LIN_H/2,
-		                       COL_W/2-MARGIN, LIN_H/2-MARGIN,
-		                       M[lin][col].desenho);
-	}
+		al_draw_bitmap(pet, x0, y0, 0);
+		}
+	
+	//else if(M[lin][col].type == 0) {
+	//	al_draw_bitmap(vazio, x0, y0, 0);
+	//	}
+
+	al_destroy_bitmap(lata);
+	al_destroy_bitmap(garrafa);
+	al_destroy_bitmap(papel);
+	al_destroy_bitmap(pet);
+	//al_destroy_bitmap(vazio);
 
 }
 
@@ -148,7 +166,6 @@ int newRecord(int score, int *record) {
 		return 1;
 	}
 	return 0;
-	
 }
 
 
@@ -156,16 +173,16 @@ void draw_scenario(ALLEGRO_DISPLAY *display) {
 
 	
 	ALLEGRO_BITMAP *image61 = NULL;
-	image61 = al_load_bitmap("Sel_061.png");
+	image61 = al_load_bitmap("bitmap//fundo.png");
 	al_draw_bitmap(image61, 0, 0, 0);
 	al_set_target_bitmap(al_get_backbuffer(display)); 
 	
 	//SCORE
-	sprintf(my_score, "score: %d", score);
-	al_draw_text(size_f, al_map_rgb(255, 255, 255), LARGURA_TELA - 200, INFO_H/4, 0, my_score); 
+	sprintf(my_score, "%d", score);
+	al_draw_text(size_f, al_map_rgb(0, 0, 0), 25, 505, 0, my_score); 
 	//PLAYS
-	sprintf(my_plays, "jogadas: %d", plays);
-	al_draw_text(size_f, al_map_rgb(255, 255, 255), 10, INFO_H/4, 0, my_plays);   
+	sprintf(my_plays, "%d", plays);
+	al_draw_text(size_f, al_map_rgb(0, 0, 0), 30, 570, 0, my_plays);   
 
 	int i, j;
 	for(i=0; i<N_LINHAS; i++) {
@@ -183,7 +200,7 @@ int clearSequence(int li, int lf, int ci, int cf) {
 		for(j=ci; j<=cf; j++) {
 			count++;
 			M[i][j].active = 0;
-			M[i][j].desenho = desenhos[0];
+			//M[i][j].desenho = desenho[0];
 		}
 	}
 	return count;
@@ -267,7 +284,7 @@ void atualizaMatriz() {
 			if(offset > 0) {
 				M[i+offset][j].type = M[i][j].type;
 				M[i+offset][j].active = M[i][j].active;
-				M[i+offset][j].desenho = M[i][j].desenho;
+				//M[i+offset][j].desenho = M[i][j].desenho;
 				M[i][j].type = 0;
 				M[i][j].active = 0;
 				M[i][j].offset_lin = 0;
@@ -307,19 +324,17 @@ int main(int argc, char **argv){
 	ALLEGRO_TIMER *timer = NULL;
 	//samples que guardam os efeitos sonoros
 	ALLEGRO_SAMPLE *som_swap=NULL;
-	ALLEGRO_SAMPLE *som_preenche=NULL;
-	ALLEGRO_SAMPLE *som_telatroca=NULL;
+	//ALLEGRO_SAMPLE *som_preenche=NULL;
 	//musica de fundo
 	ALLEGRO_AUDIO_STREAM *musica = NULL;
 	//plano de fundo
 	ALLEGRO_BITMAP *image61 = NULL;
 	//imagem das peças
-	ALLEGRO_BITMAP *Lata = NULL;
+	ALLEGRO_BITMAP *lata = NULL;
 	ALLEGRO_BITMAP *pet = NULL;
 	ALLEGRO_BITMAP *garrafa = NULL;
 	ALLEGRO_BITMAP *papel = NULL;
-	ALLEGRO_BITMAP *vazio = NULL;
-
+	
 	//----------------------- rotinas de inicializacao ---------------------------------------
 	
 	if(!al_init()) {
@@ -330,53 +345,47 @@ int main(int argc, char **argv){
 	//----------------------- rotinas de audio -----------------------------------------------
 	
 	if(!al_install_audio()){
-        error_msg("Falha ao inicializar o audio");
-        return 0;
+        fprintf(stderr, "Falha ao inicializar o audio\n");
+        return -1;
     }
 
     if(!al_init_acodec_addon()){
-        error_msg("Falha ao inicializar o codec de audio");
-        return 0;
+        fprintf(stderr, "Falha ao inicializar o audio\n");
+        return -1;
     }
 
     if (!al_reserve_samples(5)){
-        error_msg("Falha ao reservar amostrar de audio");
-        return 0;
+        fprintf(stderr, "Falha ao inicializar o audio\n");
+        return -1;
     }
 
     //carrega os samples
-    som_swap = al_load_sample("swap.mp3");
+    som_swap = al_load_sample("sons//swap.wav");
     if (!som_swap){
-        error_msg( "Audio nao carregado" );
-        return 0;
+        fprintf(stderr, "Falha ao inicializar o audio\n");
+        return -1;
     }
-    som_preenche = al_load_sample("complete.mp3");
+   /* som_preenche = al_load_sample("complete.mp3");
     if (!som_preenche){
         error_msg( "Audio nao carregado" );
         al_destroy_sample(som_preenche);
-        return 0;
-    }
-
-    /*som_telatroca = al_load_sample("nome_arquivo.extensão");
-    if (!som_telatroca){
-        error_msg("Audio nao carregado");
-        al_destroy_sample(som_telatroca);
-        return 0;
+        return -1;
     }*/
+
  
     //carrega o stream
-    musica = al_load_audio_stream("musicatabuleiro.mp3", 4, 1024);
+    musica = al_load_audio_stream("sons//jogo.wav", 4, 1024);
     if (!musica)
     {
-        error_msg( "Audio nao carregado" );
+        fprintf(stderr, "Falha ao inicializar o audio\n");
         al_destroy_sample(som_swap);
-        al_destroy_sample(som_preenche);
-        return 0;
+        //al_destroy_sample(som_preenche);
+        return -1;
     }
     //liga o stream no mixer
     al_attach_audio_stream_to_mixer(musica, al_get_default_mixer());
     //define que o stream vai tocar no modo repeat
-    al_set_audio_stream_playmode(musica, ALLEGRO_PLAYMODE_LOOP)
+    al_set_audio_stream_playmode(musica, ALLEGRO_PLAYMODE_LOOP);
 
 
 	//-------------------------------------------------------------------------------------
@@ -397,14 +406,15 @@ int main(int argc, char **argv){
 		fprintf(stderr, "failed to create display!\n");
 		al_destroy_timer(timer);
 		al_destroy_sample(som_swap);
-        al_destroy_sample(som_preenche);
+        //al_destroy_sample(som_preenche);
 		al_destroy_audio_stream(musica);
 		return -1;
 	}
 
 	if(!al_install_mouse())
-		fprintf(stderr, "failed to initialize mouse!\n");   
+		fprintf(stderr, "failed to initialize mouse!\n");
 
+	al_init_image_addon();   
 
 	//inicializa o modulo allegro que carrega as fontes
 	al_init_font_addon();
@@ -412,7 +422,7 @@ int main(int argc, char **argv){
 	al_init_ttf_addon();
 
 	//carrega o arquivo arial.ttf da fonte Arial e define que sera usado o tamanho 32 (segundo parametro)
-	size_f = al_load_font("arial.ttf", 32, 1);   	
+	size_f = al_load_font("arial.ttf", 24, 2);   	
 
 	event_queue = al_create_event_queue();
 	if(!event_queue) {
@@ -432,20 +442,6 @@ int main(int argc, char **argv){
 	al_register_event_source(event_queue, al_get_mouse_event_source());    
    //inicia o temporizador
 	al_start_timer(timer);
-
-	al_init_image_addon();
-
-	Lata = al_load_bitmap("Lata.png");
-	Pet = al_load_bitmap("pet.png");
-	Garrafa = al_load_bitmap("garrafa.png");
-	Papel = al_load_bitmap("papel.png");
-	Vazio = al_load_bitmap("vazio.png");
-
-	desenhos[0] = al_draw_bitmap(vazio, 0, 0, 0);
-	desenhos[LATA] = al_draw_bitmap(Lata, 0, 0, 0);
-	desenhos[GARRAFA] = al_draw_bitmap(Garrafa, 0, 0, 0);
-	desenhos[PAPEL] = al_draw_bitmap(Papel, 0, 0, 0);
-	desenhos[PET] = al_draw_bitmap(Pet, 0, 0, 0);
 
 	//----------------------- fim das rotinas de inicializacao ---------------------------------------
 
@@ -541,9 +537,13 @@ int main(int argc, char **argv){
 	al_destroy_timer(timer);
 	al_destroy_display(display);
 	al_destroy_bitmap(image61);
-	l_destroy_sample(som_swap);
-    al_destroy_sample(som_preenche);
-    al_destroy_audio_stream(musica)
+	al_destroy_bitmap(lata);
+	al_destroy_bitmap(garrafa);
+	al_destroy_bitmap(papel);
+	al_destroy_bitmap(pet);
+	al_destroy_sample(som_swap);
+    //al_destroy_sample(som_preenche);
+    al_destroy_audio_stream(musica);
 	al_destroy_event_queue(event_queue);
 
 	return 0;
