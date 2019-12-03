@@ -30,6 +30,9 @@
 #define INFO_H 64
 #define MARGIN 6
 
+const int COL_W = (int)LARGURA_TELA/N_COLS;
+const int LIN_H = (int)(ALTURA_TELA-INFO_H)/N_LINHAS;
+
 
 typedef struct Lixo {
 	int type;
@@ -42,21 +45,14 @@ typedef struct Lixo {
 Lixo M[N_LINHAS][N_COLS];
 ALLEGRO_COLOR cores[1];
 
-const int COL_W = (int)LARGURA_TELA/N_COLS;
-const int LIN_H = (int)(ALTURA_TELA-INFO_H)/N_LINHAS;
-
 int score=0, plays=10;
 char my_score[100], my_plays[100];
 
 ALLEGRO_FONT *size_f, *size_f2;   
 
-bool inicializar();
-
-
 int Random() {
 	return rand()%NUM_TYPES + 1;
 }
-
 
 void pausa(ALLEGRO_TIMER *timer) {
 	al_stop_timer(timer);
@@ -97,14 +93,12 @@ void iniciarJogo() {
 	}
 }
 
-
 int getXCoord(int col){
 	return col * LARGURA_COL + 80;
 }
 int getYCoord(int lin){
 	return lin * LARGURA_LIN + 80;
 }
-
 
 void draw_candy(int lin, int col) {
 
@@ -184,7 +178,6 @@ void draw_scenario(ALLEGRO_DISPLAY *display) {
 			draw_candy(i, j);
 		}
 	}       
-
 }
 
 void menu(){
@@ -203,8 +196,6 @@ void menu(){
 	al_rest(5.0);
 	al_destroy_bitmap(logo);
 }
-
-
 
 int clearSequence(int li, int lf, int ci, int cf) {
 	
@@ -290,24 +281,6 @@ void atualizaOffset() {
 		}
 	}
 }
-
-void atualizaMatriz() {
-	int i, j, offset;
-
-	for(j=0; j<N_COLS; j++) {
-		for(i=N_LINHAS-1; i>=0; i--) {
-			offset = M[i][j].offset_lin;
-			if(offset > 0) {
-				M[i+offset][j].type = M[i][j].type;
-				M[i+offset][j].active = M[i][j].active;
-				M[i][j].type = 0;
-				M[i][j].active = 0;
-				M[i][j].offset_lin = 0;
-			}
-		}
-	}
-}
-
 
 void getCell(int x, int y, int *lin, int *col){
 	x -= 80;
@@ -481,10 +454,7 @@ int main(int argc, char **argv){
 	while(n_zeros > 0) {
 		do {
 			atualizaOffset();
-			//atualizaMatriz();
 		} while(processaMatriz());
-		//completaMatriz();
-		//al_play_sample(som_preenche, 1.0, 0.0,1.0,ALLEGRO_PLAYMODE_ONCE,NULL);
 		n_zeros = processaMatriz();
 	} 
 
@@ -526,7 +496,6 @@ int main(int argc, char **argv){
 				al_flip_display();
 				pausa(timer);					
 				atualizaOffset();
-				//atualizaMatriz();
 				score+=pow(2,pontos);
 				pontos = processaMatriz();
 			}
