@@ -68,8 +68,8 @@ void completaMatriz() {
 		for(j=0; j<N_COLS; j++) {
 			if(M[i][j].type == 0) {
 				M[i][j].type = Random();
-				M[i][j].offset_col = 0;
-				M[i][j].offset_lin = 0;
+				//M[i][j].offset_col = 0;
+				//M[i][j].offset_lin = 0;
 				M[i][j].active = 1;
 				M[i][j].cor = al_map_rgba_f(1, 1, 1, 1);
 			}
@@ -83,8 +83,8 @@ void iniciarJogo() {
 	for(i=0; i<N_LINHAS; i++) {
 		for(j=0; j<N_COLS; j++) {
 			M[i][j].type = Random();
-			M[i][j].offset_col = 0;
-			M[i][j].offset_lin = 0;
+			//M[i][j].offset_col = 0;
+			//M[i][j].offset_lin = 0;
 			M[i][j].active = 1;
 			M[i][j].cor = al_map_rgba_f(1, 1, 1, 1);
 			printf("%d ", M[i][j].type);
@@ -165,10 +165,10 @@ void draw_scenario(ALLEGRO_DISPLAY *display) {
 	al_draw_bitmap(image61, 0, 0, 0);
 	al_set_target_bitmap(al_get_backbuffer(display)); 
 	
-	//SCORE
+	//PONTUAÇÃO
 	sprintf(my_score, "%d", score);
 	al_draw_text(size_f, al_map_rgb(0, 0, 0), 25, 505, 0, my_score); 
-	//PLAYS
+	//JOGADAS
 	sprintf(my_plays, "%d", plays);
 	al_draw_text(size_f, al_map_rgb(0, 0, 0), 30, 570, 0, my_plays);   
 
@@ -190,7 +190,6 @@ void menu(){
 	al_draw_bitmap(logo, 0, 0, 0);
 
 	al_draw_text(size_f2, al_map_rgb(255, 255, 255), LARGURA_TELA/2.5, ALTURA_TELA/1.5, 0, "AGUARDE!");
-	
 	al_flip_display();
 	
 	al_rest(5.0);
@@ -213,7 +212,6 @@ int clearSequence(int li, int lf, int ci, int cf) {
 
 
 int processaMatriz() {
-
 	//retorna a quantidade de pontos feitos
 	int i, j, k, count = 0;
 	int current, seq, ultimo;
@@ -354,13 +352,6 @@ int main(int argc, char **argv){
         fprintf(stderr, "Falha ao inicializar o audio\n");
         return -1;
     }
-   /*som_preenche = al_load_sample("sons//complete.wav");
-    if (!som_preenche){
-        fprintf(stderr, "Falha ao inicializar o audio\n");
-        al_destroy_sample(som_preenche);
-        return -1;
-    }*/
-
  
     //carrega o stream
     musica = al_load_audio_stream("sons//jogo.wav", 4, 1024);
@@ -368,7 +359,6 @@ int main(int argc, char **argv){
     {
         fprintf(stderr, "Falha ao inicializar o audio\n");
         al_destroy_sample(som_swap);
-        //al_destroy_sample(som_preenche);
         return -1;
     }
     //liga o stream no mixer
@@ -395,7 +385,6 @@ int main(int argc, char **argv){
 		fprintf(stderr, "failed to create display!\n");
 		al_destroy_timer(timer);
 		al_destroy_sample(som_swap);
-       // al_destroy_sample(som_preenche);
 		al_destroy_audio_stream(musica);
 		return -1;
 	}
@@ -404,13 +393,9 @@ int main(int argc, char **argv){
 		fprintf(stderr, "failed to initialize mouse!\n");
 
 	al_init_image_addon();   
-
-	//inicializa o modulo allegro que carrega as fontes
 	al_init_font_addon();
-	//inicializa o modulo allegro que entende arquivos tff de fontes
 	al_init_ttf_addon();
 
-	//carrega o arquivo arial.ttf da fonte Arial e define que sera usado o tamanho 32 (segundo parametro)
 	size_f = al_load_font("arial.ttf", 24, 2);
 	size_f2 = al_load_font("comic.ttf", 48, 1);   	
 
@@ -422,33 +407,16 @@ int main(int argc, char **argv){
 		return -1;
 	}
 	al_install_keyboard();
-   //registra na fila de eventos que eu quero identificar quando a tela foi alterada
 	al_register_event_source(event_queue, al_get_display_event_source(display));
-   //registra na fila de eventos que eu quero identificar quando o tempo alterou de t para t+1
 	al_register_event_source(event_queue, al_get_timer_event_source(timer));
-	//registra o teclado na fila de eventos:
 	al_register_event_source(event_queue, al_get_keyboard_event_source());   
-	//registra mouse na fila de eventos:
 	al_register_event_source(event_queue, al_get_mouse_event_source());    
-   //inicia o temporizador
 	al_start_timer(timer);
-
-	//cores[0] = al_map_rgb(255,255,255);
 
 	//----------------------- fim das rotinas de inicializacao ---------------------------------------
 	srand(4);
-	//bool doexit = false;
-	
+
 	menu();
-
-	/*while(!doexit){
-
-		if(ev.type == ALLEGRO_EVENT_MOUSE_BUTTON_DOWN){
-				iniciarJogo();
-			}	
-	}*/
-
-
 
 	int n_zeros = processaMatriz();
 	while(n_zeros > 0) {
@@ -458,14 +426,14 @@ int main(int argc, char **argv){
 		n_zeros = processaMatriz();
 	} 
 
+
 	draw_scenario(display);
 	al_flip_display();	
 
 	int pontos, playing = 1, col_src, lin_src, col_dst, lin_dst, flag_animation=0;
-	//enquanto playing for verdadeiro, faca:
+
 	while(playing) {
-		//ALLEGRO_EVENT ev;
-	  //espera por um evento e o armazena na variavel de evento ev
+
 		al_wait_for_event(event_queue, &ev);
 
 		if(ev.type == ALLEGRO_EVENT_KEY_DOWN) {
@@ -483,11 +451,10 @@ int main(int argc, char **argv){
 				&& M[lin_src][col_src].type && M[lin_dst][col_dst].type) {
 				swap(lin_src, col_src, lin_dst, col_dst);
 				al_play_sample(som_swap, 1.0, 0.0,1.0,ALLEGRO_PLAYMODE_ONCE,NULL);
-				flag_animation = 1; //nao permite que o usuario faca outro comando enquanto a animacao ocorre
+				flag_animation = 1;
 			}
 
 		}		
-	    //se o tipo de evento for um evento do temporizador, ou seja, se o tempo passou de t para t+1
 		else if(ev.type == ALLEGRO_EVENT_TIMER) {
 			pontos = processaMatriz();
 			
@@ -500,8 +467,6 @@ int main(int argc, char **argv){
 				pontos = processaMatriz();
 			}
 
-
-		    //reinicializo a tela
 		    draw_scenario(display);
 			al_flip_display();		
 
@@ -509,7 +474,7 @@ int main(int argc, char **argv){
 				playing = 0;
 			flag_animation = 0;
 		}
-	    //se o tipo de evento for o fechamento da tela (clique no x da janela)
+
 		else if(ev.type == ALLEGRO_EVENT_DISPLAY_CLOSE) {
 			playing = 0;
 		}
@@ -519,7 +484,7 @@ int main(int argc, char **argv){
 	al_rest(1);
 
 	int record;
-	//colore toda a tela de preto
+
 	al_clear_to_color(al_map_rgb(230,240,250));
 	sprintf(my_score, "Score: %d", score);
 	al_draw_text(size_f, al_map_rgb(200, 0, 30), LARGURA_TELA/3, ALTURA_TELA/2, 0, my_score);
@@ -530,7 +495,7 @@ int main(int argc, char **argv){
 		sprintf(my_score, "Record: %d", record);
 		al_draw_text(size_f, al_map_rgb(0, 200, 30), LARGURA_TELA/3, 100+ALTURA_TELA/2, 0, my_score);
 	}
-	//reinicializa a tela
+
 	al_flip_display();	
 	al_rest(2);	
 
@@ -543,7 +508,6 @@ int main(int argc, char **argv){
 	al_destroy_bitmap(papel);
 	al_destroy_bitmap(pet);
 	al_destroy_sample(som_swap);
-    //al_destroy_sample(som_preenche);
     al_destroy_audio_stream(musica);
 	al_destroy_event_queue(event_queue);
 

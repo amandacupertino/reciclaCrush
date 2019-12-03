@@ -2,13 +2,7 @@ LIBS=`pkg-config --cflags --libs allegro-5 allegro_acodec-5 allegro_audio-5 alle
 
 INCLUDES=-I/home/pi/allegro5/
 
-all: candyc ccrush louco testeteclado
-
-candyc: candyc.o
-	gcc -o candyc candyc.o $(LIBS)
-
-candyc.o: candyc.c
-	gcc -c candyc.c $(LIBS)
+all: ccrush
 
 ccrush: ccrush.o
 	gcc -o ccrush ccrush.o $(LIBS)
@@ -16,26 +10,6 @@ ccrush: ccrush.o
 ccrush.o: ccrush.c
 	gcc -c ccrush.c $(LIBS)
 
-louco: louco.o
-	gcc -o louco louco.o $(LIBS)
-
-louco.o: louco.c
-	gcc -c louco.c $(LIBS)
-
-testeteclado: testeteclado.o
-	gcc -o testeteclado testeteclado.o $(LIBS)
-
-testeteclado.o: testeteclado.c
-	gcc -c testeteclado.c $(LIBS)
-
 clean:
-	rm -f candyc.o
-	rm -f candyc
 	rm -f ccrush.o
 	rm -f ccrush
-	rm -f louco.o
-	rm -f louco
-	rm -f testeteclado.o
-	rm -f testeteclado
-
-
