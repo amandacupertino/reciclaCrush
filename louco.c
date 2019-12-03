@@ -19,7 +19,7 @@ display = al_create_display(480, 640);
 al_init_image_addon();
 
 //carrega a imagem louco.jpg e a atribui aa variavel image
-ALLEGRO_BITMAP *image = al_load_bitmap("bitmap//papel.png");
+ALLEGRO_BITMAP *image = al_load_bitmap("candy1.png");
 
 //coloca na tela a imagem armazenada na variavel image nas posicoes x=50, y=100
 al_draw_bitmap(image, 0, 0, 0);
